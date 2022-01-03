@@ -398,11 +398,20 @@ namespace IGFD
 		std::wstring ret;
 		if (!str.empty())
 		{
+#ifndef MSVC
 			size_t sz = std::mbstowcs(nullptr, str.c_str(), str.size());
+#else
+            size_t sz = 0;
+			mbstowcs_s(&sz, nullptr, 0, str.c_str(), str.size());
+#endif
 			if (sz)
 			{
-				ret.resize(sz);
+                ret.resize(sz);
+#ifndef MSVC
 				std::mbstowcs((wchar_t*)ret.data(), str.c_str(), sz);
+#else
+                mbstowcs_s(nullptr, ret.data(), sz, str.c_str(), str.size());
+#endif
 			}
 		}
 		return ret;
@@ -411,13 +420,22 @@ namespace IGFD
 	std::string IGFD::Utils::wstring_to_string(const std::wstring& str)
 	{
 		std::string ret;
-		if (!str.empty())
+		if (!str.empty()) 
 		{
-			size_t sz = std::wcstombs(nullptr, str.c_str(), str.size());
+#ifndef MSVC
+            size_t sz = std::wcstombs(nullptr, str.c_str(), str.size());
+#else
+            size_t sz = 0;
+            wcstombs_s(&sz, nullptr, 0, str.c_str(), str.size());
+#endif
 			if (sz)
 			{
 				ret.resize(sz);
-				std::wcstombs((char*)ret.data(), str.c_str(), sz);
+#ifndef MSVC
+                std::wcstombs((wchar_t*)ret.data(), str.c_str(), sz);
+#else
+                wcstombs_s(nullptr, ret.data(), sz, str.c_str(), str.size());
+#endif
 			}
 		}
 		return ret;
@@ -469,7 +487,7 @@ namespace IGFD
 #define mini(a,b) (((a) < (b)) ? (a) : (b))
 		const DWORD countChars = mini(GetLogicalDriveStringsA(mydrives, lpBuffer), 2047);
 #undef mini
-		if (countChars > 0)
+		if (countChars > 0 && countChars < 2049)
 		{
 			std::string var = std::string(lpBuffer, (size_t)countChars);
 			IGFD::Utils::ReplaceString(var, "\\", "");
@@ -2472,7 +2490,7 @@ namespace IGFD
 
 									const auto newWidth = (int)newX;
 									const auto newHeight = (int)newY;
-									const auto newBufSize = (size_t)(newWidth * newHeight * 4U); //-V112 //-V1028
+									const auto newBufSize = ((size_t)newWidth * newHeight * 4U); //-V112 //-V1028
 									auto resizedData = new uint8_t[newBufSize];
 									
 									const int resizeSucceeded = stbir_resize_uint8(
@@ -4380,6 +4398,7 @@ namespace IGFD
 
 	void IGFD::FileDialog::SetLocales(const int& vLocaleCategory, const std::string& vLocaleBegin, const std::string& vLocaleEnd)
 	{
+        (void)vLocaleCategory;
 		prFileDialogInternal.puUseCustomLocale = true;
 		prFileDialogInternal.puLocaleBegin = vLocaleBegin;
 		prFileDialogInternal.puLocaleEnd = vLocaleEnd;
